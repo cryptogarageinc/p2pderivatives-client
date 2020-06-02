@@ -14,9 +14,14 @@ import {
   APIRvalue,
   APISignature,
 } from './apitypes'
+import { OracleConfig } from './oracleConfig'
 import { OracleError } from './oracleError'
 
 export const HeaderRequestIDTag = 'Request-Id'
+
+export const ROUTE_ORACLE_PUBLIC_KEY = 'oracle/publickey'
+export const ROUTE_ASSET = 'asset'
+
 export type FailableOracle<R> = Failable<R, OracleFail>
 export interface OracleFail {
   requestID: string
@@ -29,10 +34,6 @@ type APIDLCRoute<T extends APIRvalue | APISignature> = T extends APISignature
   ? 'signature'
   : 'rvalue'
 
-export interface OracleConfig {
-  baseUrl: string
-}
-
 export default class OracleClient {
   private readonly _httpClient: AxiosInstance
 
@@ -43,7 +44,7 @@ export default class OracleClient {
   }
 
   async getOraclePublicKey(): Promise<FailableOracle<string>> {
-    const resp = await this.get<APIOraclePublicKey>('oracle')
+    const resp = await this.get<APIOraclePublicKey>(ROUTE_ORACLE_PUBLIC_KEY)
     if (isSuccessful(resp)) {
       // transform response data
       const apiResp = resp.value
@@ -57,7 +58,7 @@ export default class OracleClient {
   }
 
   async getAssets(): Promise<FailableOracle<string[]>> {
-    return this.get<APIAssets>('asset')
+    return this.get<APIAssets>(ROUTE_ASSET)
   }
 
   async getOracleConfig(
@@ -91,9 +92,10 @@ export default class OracleClient {
       return {
         success: true,
         value: {
+          oraclePublicKey: apiResp.oraclePublicKey,
           publishDate: DateTime.fromISO(apiResp.publishDate).toUTC(),
           rvalue: apiResp.rvalue,
-          assetID: apiResp.assetID,
+          assetID: apiResp.asset,
         },
       }
     } else {
@@ -112,9 +114,10 @@ export default class OracleClient {
       return {
         success: true,
         value: {
+          oraclePublicKey: apiResp.oraclePublicKey,
           publishDate: DateTime.fromISO(apiResp.publishDate).toUTC(),
           rvalue: apiResp.rvalue,
-          assetID: apiResp.assetID,
+          assetID: apiResp.asset,
           signature: apiResp.signature,
           value: apiResp.value,
         },

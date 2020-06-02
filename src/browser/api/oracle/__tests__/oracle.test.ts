@@ -14,7 +14,12 @@ import {
   APIRvalue,
   APISignature,
 } from '../apitypes'
-import OracleClient, { FailableOracle, OracleFail } from '../oracleClient'
+import OracleClient, {
+  FailableOracle,
+  OracleFail,
+  ROUTE_ASSET,
+  ROUTE_ORACLE_PUBLIC_KEY,
+} from '../oracleClient'
 
 // setup mock axios
 jest.mock('axios')
@@ -25,12 +30,12 @@ describe('Oracle Client', () => {
   let client: OracleClient
   beforeEach(() => {
     mockedAxios.get.mockRestore()
-    client = new OracleClient({ baseUrl: 'ignoredbymock' })
+    client = new OracleClient({ baseUrl: 'http://try' })
   })
 
   test('Get Oracle public key', async () => {
     // arrange
-    const expectedRoute = 'oracle'
+    const expectedRoute = ROUTE_ORACLE_PUBLIC_KEY
     const expected = 'test-public-key'
     const mockValue: APIOraclePublicKey = {
       publicKey: expected,
@@ -50,7 +55,7 @@ describe('Oracle Client', () => {
   })
   test('Get asset list', async () => {
     // arrange
-    const expectedRoute = 'asset'
+    const expectedRoute = ROUTE_ASSET
     const expected = ['assetA', 'assetB']
     const mockValue: APIAssets = [...expected]
     mockedAxios.get.mockResolvedValueOnce({ data: mockValue })
@@ -99,14 +104,16 @@ describe('Oracle Client', () => {
     const testAsset = 'assetA'
     const paramDate = DateTime.utc()
     const mockValue: APIRvalue = {
+      oraclePublicKey: 'oracle',
       publishDate: paramDate.toISO(),
       rvalue: 'test-rvalue',
-      assetID: testAsset,
+      asset: testAsset,
     }
     const expected: OracleRvalue = {
+      oraclePublicKey: mockValue.oraclePublicKey,
       publishDate: paramDate,
       rvalue: mockValue.rvalue,
-      assetID: mockValue.assetID,
+      assetID: mockValue.asset,
     }
     const expectedRoute = `asset/${testAsset}/rvalue/${paramDate.toISO()}`
     mockedAxios.get.mockResolvedValueOnce({ data: mockValue })
@@ -128,15 +135,17 @@ describe('Oracle Client', () => {
     const testAsset = 'assetA'
     const paramDate = DateTime.utc()
     const mockValue: APISignature = {
-      assetID: testAsset,
+      oraclePublicKey: 'oracle',
+      asset: testAsset,
       publishDate: paramDate.toISO(),
       rvalue: 'test-rvalue',
       signature: 'test-signature',
       value: 'test-value',
     }
     const expected: OracleSignature = {
+      oraclePublicKey: mockValue.oraclePublicKey,
       publishDate: paramDate,
-      assetID: mockValue.assetID,
+      assetID: mockValue.asset,
       rvalue: mockValue.rvalue,
       signature: mockValue.signature,
       value: mockValue.value,
@@ -177,7 +186,7 @@ describe('Oracle Client', () => {
       isAxiosError: true,
       response: {
         data: mockValue,
-        headers: { RequestID: expectedRequestID },
+        headers: { 'Request-Id': expectedRequestID },
         status: expectedStatusCode,
         statusText: '', // ignored
         config: {}, // ignored

@@ -1,3 +1,5 @@
+import { app } from 'electron'
+import path from 'path'
 import { GrpcAuth } from './api/grpc/GrpcAuth'
 import { GrpcClient } from './api/grpc/GrpcClient'
 import { GrpcConfig } from './api/grpc/GrpcConfig'
@@ -11,7 +13,14 @@ import { UserEvents } from './ipc/UserEvents'
 import FileStorage from './storage/fileStorage'
 
 const initialize = async (): Promise<void> => {
-  const appConfig = new AppConfig('./settings.default.yaml')
+  let resourcesPath: string
+  if (!app.isPackaged) {
+    resourcesPath = app.getAppPath()
+  } else {
+    resourcesPath = path.join(app.getAppPath(), '..')
+  }
+  const configPath = path.join(resourcesPath, 'settings.default.yaml')
+  const appConfig = new AppConfig(configPath)
 
   const auth = new GrpcAuth()
   const grpcConfig = appConfig.parse<GrpcConfig>('grpc')

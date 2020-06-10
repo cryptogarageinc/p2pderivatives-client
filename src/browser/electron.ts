@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import * as path from 'path'
-import * as isDev from 'electron-is-dev'
+import url from 'url'
 import initialize from './initialize'
 
 let mainWindow: BrowserWindow | null = null
@@ -12,12 +12,16 @@ function createWindow(): void {
     webPreferences: { nodeIntegration: true },
   })
   initialize()
-  mainWindow.loadURL(
-    isDev
-      ? 'http://localhost:9000'
-      : `file://${path.join(__dirname, '../build/index.html')}`
-  )
-  mainWindow.webContents.toggleDevTools()
+  let startUrl = url.format({
+    pathname: path.join(__dirname, '/../index.html'),
+    protocol: 'file:',
+    slashes: true,
+  })
+  if (!app.isPackaged) {
+    startUrl = 'http://localhost:9000'
+    mainWindow.webContents.toggleDevTools()
+  }
+  mainWindow.loadURL(startUrl)
   mainWindow.on('closed', () => (mainWindow = null))
 }
 

@@ -10,8 +10,13 @@
   "build": {
     "extends": null,
     "appId": "jp.co.cryptogarage.p2pd.client",
+    "productName": "P2P derivatives client",
     "files": [
-      "build/**/*"
+      "build",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      "settings.default.yaml"
     ]
   },
   "scripts": {

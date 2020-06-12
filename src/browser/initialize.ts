@@ -19,7 +19,7 @@ const initialize = async (): Promise<void> => {
   } else {
     resourcesPath = path.join(app.getAppPath(), '..')
   }
-  const configPath = path.join(resourcesPath, 'settings.default.yaml')
+  const configPath = path.join(resourcesPath, 'settings.default.yml')
   const appConfig = new AppConfig(configPath)
 
   const auth = new GrpcAuth()

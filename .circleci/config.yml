@@ -1,8 +1,79 @@
 version: 2.1
-jobs:
-  dependencies:
+executors:
+  client-runner:
     docker:
       - image: cryptogarageinc/p2pderivatives-client-ci
+  client-browsers-runner:
+    docker:
+      - image: cryptogarageinc/p2pderivatives-client-ci:latest-browser
+  macos-packager:
+    macos:
+      xcode: 11.3.0
+    environment:
+      BUILD_ARG: -m
+  win-packager:
+    docker:
+      - image: electronuserland/builder:wine
+    environment:
+      BUILD_ARG: -w
+  linux-packager:
+    docker:
+      - image: electronuserland/builder:wine
+    environment:
+      BUILD_ARG: -l
+
+tag_only: &tag_only
+  filters:
+    tags:
+      only: /.*/
+    branches:
+      ignore: /.*/
+
+workflows:
+  lint-build-test:
+    jobs:
+      - dependencies
+      - lint:
+          requires:
+            - dependencies
+      - build:
+          requires:
+            - dependencies
+      - jest-tests:
+          requires:
+            - build
+      - mocha-tests:
+          requires:
+            - build
+  tagged:
+    jobs:
+      - dependencies:
+          <<: *tag_only
+      - packaging:
+          name: macos-packaging
+          runner:
+            name: macos-packager
+          <<: *tag_only
+          requires:
+            - dependencies
+      - packaging:
+          name: windows-packaging
+          runner:
+            name: win-packager
+          <<: *tag_only
+          requires:
+            - dependencies
+      - packaging:
+          name: linux-packaging
+          runner:
+            name: linux-packager
+          <<: *tag_only
+          requires:
+            - dependencies
+
+jobs:
+  dependencies:
+    executor: client-runner
     steps:
       - checkout
       - run:
@@ -53,8 +124,7 @@ jobs:
             - .
 
   lint:
-    docker:
-      - image: cryptogarageinc/p2pderivatives-client-ci
+    executor: client-runner
     steps:
       - attach_workspace:
           at: .
@@ -65,8 +135,7 @@ jobs:
           path: ./reports/linter
 
   build:
-    docker:
-      - image: cryptogarageinc/p2pderivatives-client-ci
+    executor: client-runner
     steps:
       - attach_workspace:
           at: .
@@ -75,8 +144,7 @@ jobs:
           command: CI=false npm run build # ci to false avoid linter warnings as errors
 
   jest-tests:
-    docker:
-      - image: cryptogarageinc/p2pderivatives-client-ci
+    executor: client-runner
     steps:
       - attach_workspace:
           at: .
@@ -92,8 +160,7 @@ jobs:
           path: ./reports/jest
 
   mocha-tests:
-    docker:
-      - image: cryptogarageinc/p2pderivatives-client-ci:latest-browser
+    executor: client-browsers-runner
     steps:
       - attach_workspace:
           at: .
@@ -108,19 +175,18 @@ jobs:
       - store_artifacts:
           path: ./reports/mocha
 
-workflows:
-  lint-build-test:
-    jobs:
-      - dependencies
-      - lint:
-          requires:
-            - dependencies
-      - build:
-          requires:
-            - dependencies
-      - jest-tests:
-          requires:
-            - build
-      - mocha-tests:
-          requires:
-            - build
+  packaging:
+    parameters:
+      runner:
+        type: executor
+    executor: << parameters.runner >>
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Packaging
+          command: |
+            npm run dist -- ${BUILD_ARG}
+            mkdir pkg && cp dist/P2P* pkg
+      - store_artifacts:
+          path: ./pkg

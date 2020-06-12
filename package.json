@@ -13,10 +13,14 @@
     "productName": "P2P derivatives client",
     "files": [
       "build",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "public/icon.png"
     ],
     "extraResources": [
-      "settings.default.yaml"
+      {
+        "from": "settings.production.yml",
+        "to": "settings.default.yml"
+      }
     ]
   },
   "scripts": {

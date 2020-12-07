@@ -1,3 +1,5 @@
+import { RangeOutcome } from '../../../common/models/dlc/RangeOutcome'
+
 export function composeOutcomeValue(values: string[], base: number): string {
   return composeValue(
     values.map(x => parseInt(x)),
@@ -11,6 +13,38 @@ export function decomposeOutcomeValue(
   nbdigits: number
 ): string[] {
   return decomposeValue(parseInt(value), base, nbdigits).map(x => x.toString())
+}
+
+export function getMaxRanges(
+  originalOutcomes: ReadonlyArray<RangeOutcome>,
+  base: number,
+  nbNonces: number
+): ReadonlyArray<RangeOutcome> {
+  let outcomes: RangeOutcome[] | undefined
+  const firstOutcome = originalOutcomes[0]
+  if (firstOutcome.start !== 0) {
+    outcomes = [...originalOutcomes]
+    outcomes[0] = {
+      start: 0,
+      count: firstOutcome.count + firstOutcome.start,
+      payout: firstOutcome.payout,
+    }
+  }
+  const lastIndex = originalOutcomes.length - 1
+  const lastOutcome = outcomes
+    ? outcomes[lastIndex]
+    : originalOutcomes[lastIndex]
+  const maxValue = Math.pow(base, nbNonces)
+  if (lastOutcome.start + lastOutcome.count !== maxValue) {
+    outcomes = outcomes || [...originalOutcomes]
+    outcomes[lastIndex] = {
+      start: lastOutcome.start,
+      count: maxValue - lastOutcome.start,
+      payout: lastOutcome.payout,
+    }
+  }
+
+  return outcomes || originalOutcomes
 }
 
 function decomposeValue(
